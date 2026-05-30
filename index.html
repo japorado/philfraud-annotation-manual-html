@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="slides-format" content="viewport">
+    <title>PhilFraud-SS Annotation Manual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+        @theme {
+            --color-bg: #0b1120;
+            --color-bg-deep: #060c18;
+            --color-surface: #131f35;
+            --color-text: #e8edf5;
+            --color-text-secondary: #a8b5cc;
+            --color-text-muted: #5a6a85;
+            --color-accent-1: #3b82f6;
+            --color-accent-2: #60a5fa;
+            --color-accent-3: #93c5fd;
+            --color-fraud: #ef4444;
+            --color-safe: #22c55e;
+            --color-warn: #f59e0b;
+            --color-glass-bg: rgba(255,255,255,0.05);
+            --color-glass-border: rgba(255,255,255,0.08);
+            --color-vignette: rgba(0,0,0,0.45);
+            --font-display: 'DM Serif Display', serif;
+            --font-body: 'DM Sans', sans-serif;
+        }
+    </style>
+    <style>
+        :root { --color-bg: #0b1120; --color-text: #e8edf5; --glow-color-rgb: 59,130,246; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { background: var(--color-bg); margin: 0; }
+        body { font-family: 'DM Sans', sans-serif; color: var(--color-text); overflow: hidden; height: 100vh; width: 100vw; }
+        .deck { width: 100vw; height: 100vh; position: relative; }
+        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--color-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.96); transition: opacity 0.65s ease, transform 0.65s ease; pointer-events: none; overflow: hidden; }
+        .slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
+        .slide > .content { position: relative; z-index: 2; width: 100%; max-width: 1080px; padding: clamp(1.2rem, 3.5vw, 3.5rem); }
+        .nav-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; z-index: 100; background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); padding: 8px 20px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.08); }
+        .nav-btn { width: 36px; height: 36px; border: none; background: rgba(255,255,255,0.06); color: #60a5fa; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.25s; }
+        .nav-btn:hover { background: rgba(59,130,246,0.2); }
+        .slide-dots { display: flex; gap: 7px; }
+        .slide-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; transition: background 0.3s, transform 0.3s; }
+        .slide-dots .dot.active { background: #3b82f6; transform: scale(1.4); }
+        .slide-counter { font-size: 0.75rem; color: #5a6a85; min-width: 36px; text-align: center; }
+        .reveal { opacity: 0; transform: translateY(18px); }
+        @keyframes float-slow { 0%{transform:translate(0,0) scale(1)} 25%{transform:translate(50px,-45px) scale(1.1)} 50%{transform:translate(-35px,35px) scale(0.9)} 75%{transform:translate(45px,18px) scale(1.07)} 100%{transform:translate(0,0) scale(1)} }
+        @keyframes float-drift { 0%{transform:translate(0,0) scale(1) rotate(0deg)} 33%{transform:translate(-45px,-55px) scale(1.12) rotate(3deg)} 66%{transform:translate(38px,28px) scale(0.88) rotate(-2deg)} 100%{transform:translate(0,0) scale(1) rotate(0deg)} }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+        @keyframes pulse-glow { 0%,100%{opacity:0.7} 50%{opacity:1} }
+        .gradient-mesh { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); animation: float-slow 11s ease-in-out infinite; }
+        .blob:nth-child(2) { animation: float-drift 15s ease-in-out infinite; }
+        .blob:nth-child(3) { animation: float-slow 19s ease-in-out infinite reverse; }
+        .slide::before { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); background-repeat:repeat; background-size:256px; opacity:0.025; mix-blend-mode:overlay; }
+        .slide::after { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse at center, transparent 50%, var(--color-vignette) 100%); }
+        .text-glow { text-shadow: 0 0 20px rgba(59,130,246,0.5), 0 0 40px rgba(59,130,246,0.2); }
+        .stat-glow { text-shadow: 0 0 30px rgba(59,130,246,0.6), 0 0 60px rgba(59,130,246,0.25); }
+        .fraud-glow { text-shadow: 0 0 20px rgba(239,68,68,0.6); }
+        .safe-glow { text-shadow: 0 0 20px rgba(34,197,94,0.6); }
+        .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1.25rem 1.5rem; transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .glass-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(59,130,246,0.15); }
+        .pill-fraud { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 999px; padding: 3px 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .pill-safe { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #86efac; border-radius: 999px; padding: 3px 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .pill-easy { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25); color: #86efac; border-radius: 999px; padding: 2px 10px; font-size: 0.72rem; font-weight: 600; display: inline-block; }
+        .pill-medium { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); color: #fcd34d; border-radius: 999px; padding: 2px 10px; font-size: 0.72rem; font-weight: 600; display: inline-block; }
+        .pill-hard { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; border-radius: 999px; padding: 2px 10px; font-size: 0.72rem; font-weight: 600; display: inline-block; }
+        .signal-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; border-radius: 8px; background: rgba(59,130,246,0.05); border-left: 2px solid rgba(59,130,246,0.35); margin-bottom: 7px; }
+        .step-num { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #60a5fa); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .section-badge { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.08)); border: 1px solid rgba(59,130,246,0.25); border-radius: 8px; padding: 4px 14px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #60a5fa; display: inline-block; margin-bottom: 10px; }
+        .divider-line { width: 48px; height: 3px; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 2px; margin: 10px 0 16px; }
+        @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:0.01ms !important; transition-duration:0.2s !important; } }
+    </style>
+</head>
+<body>
+<div class="mouse-spotlight" style="position:fixed;inset:0;z-index:99;pointer-events:none;"></div>
+<div class="deck">
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide slide-1 active" data-slide="1">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:500px;height:500px;top:-120px;right:-100px;background:#3b82f6;opacity:0.12;"></div>
+        <div class="blob" style="width:320px;height:320px;bottom:-80px;left:-60px;background:#1d4ed8;opacity:0.1;"></div>
+        <div class="blob" style="width:200px;height:200px;top:38%;left:12%;background:#60a5fa;opacity:0.08;"></div>
+    </div>
+    <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+    <div class="content text-center">
+        <div style="font-size:3.8rem;margin-bottom:1rem;animation:float 3.2s ease-in-out infinite;" class="reveal">🛡️</div>
+        <div class="section-badge reveal">Annotation Onboarding</div>
+        <h1 style="font-family:'DM Serif Display',serif;font-size:clamp(2.2rem,5.5vw,4rem);font-weight:700;background:linear-gradient(135deg,#60a5fa,#93c5fd,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;margin:0.4rem 0;" class="reveal">PhilFraud-SS<br>Annotation Manual</h1>
+        <p style="font-size:clamp(0.85rem,1.4vw,1.1rem);color:#a8b5cc;letter-spacing:0.12em;text-transform:uppercase;margin-top:0.8rem;" class="reveal">Quick Reference Guide for Annotators</p>
+        <p style="font-size:0.8rem;color:#5a6a85;margin-top:1.2rem;letter-spacing:0.05em;" class="reveal">De La Salle University · Master's Thesis · v1.0</p>
+    </div>
+</div>
+
+<!-- SLIDE 2: OVERVIEW -->
+<div class="slide slide-2" data-slide="2">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:380px;height:380px;top:-80px;right:-80px;background:#3b82f6;opacity:0.08;"></div>
+        <div class="blob" style="width:260px;height:260px;bottom:-60px;left:-40px;background:#1d4ed8;opacity:0.07;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">Overview</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;margin-bottom:0.3rem;" class="reveal">What You'll Be Doing</h2>
+        <div class="divider-line reveal"></div>
+        <p style="color:#a8b5cc;font-size:0.92rem;max-width:680px;margin-bottom:1.4rem;" class="reveal">For every screenshot, you label <strong style="color:#e8edf5;">5 fields</strong>. Your labels become the ground truth that trains and evaluates the PhilFraud-Agent AI system.</p>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;" class="reveal">
+            <div class="glass-card" style="text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:6px;">🔴</div>
+                <div style="font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.06em;text-transform:uppercase;">A1</div>
+                <div style="font-size:0.85rem;font-weight:600;margin:4px 0;">Binary Label</div>
+                <div style="font-size:0.72rem;color:#a8b5cc;">Fraud or Safe</div>
+            </div>
+            <div class="glass-card" style="text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:6px;">🗂️</div>
+                <div style="font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.06em;text-transform:uppercase;">A2</div>
+                <div style="font-size:0.85rem;font-weight:600;margin:4px 0;">Fraud Category</div>
+                <div style="font-size:0.72rem;color:#a8b5cc;">Type of scam</div>
+            </div>
+            <div class="glass-card" style="text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:6px;">🎯</div>
+                <div style="font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.06em;text-transform:uppercase;">A3</div>
+                <div style="font-size:0.85rem;font-weight:600;margin:4px 0;">Difficulty Tier</div>
+                <div style="font-size:0.72rem;color:#a8b5cc;">Easy / Medium / Hard</div>
+            </div>
+            <div class="glass-card" style="text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:6px;">📝</div>
+                <div style="font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.06em;text-transform:uppercase;">D</div>
+                <div style="font-size:0.85rem;font-weight:600;margin:4px 0;">Rationale</div>
+                <div style="font-size:0.72rem;color:#a8b5cc;">2–4 sentences</div>
+            </div>
+            <div class="glass-card" style="text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:6px;">💡</div>
+                <div style="font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.06em;text-transform:uppercase;">A4</div>
+                <div style="font-size:0.85rem;font-weight:600;margin:4px 0;">Confidence</div>
+                <div style="font-size:0.72rem;color:#a8b5cc;">High / Medium / Low</div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;" class="reveal">
+            <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.2rem;">⏱️</span>
+                <div><div style="font-size:0.78rem;font-weight:700;color:#86efac;">Easy Cases</div><div style="font-size:0.72rem;color:#a8b5cc;">~1 minute each</div></div>
+            </div>
+            <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.2rem;">⏱️</span>
+                <div><div style="font-size:0.78rem;font-weight:700;color:#fcd34d;">Medium Cases</div><div style="font-size:0.72rem;color:#a8b5cc;">~2 minutes each</div></div>
+            </div>
+            <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.2rem;">⏱️</span>
+                <div><div style="font-size:0.78rem;font-weight:700;color:#fca5a5;">Hard Cases</div><div style="font-size:0.72rem;color:#a8b5cc;">~3–5 minutes each</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 3: BINARY LABEL -->
+<div class="slide slide-3" data-slide="3">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:400px;height:400px;top:-90px;right:-90px;background:#ef4444;opacity:0.07;"></div>
+        <div class="blob" style="width:280px;height:280px;bottom:-70px;left:-50px;background:#22c55e;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">A1 · Binary Label</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.6rem,3.5vw,2.4rem);margin-bottom:0.3rem;" class="reveal">Fraud vs. Safe — The Key Distinction</h2>
+        <div class="divider-line reveal"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;" class="reveal">
+            <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25);border-radius:14px;padding:1.2rem 1.4rem;">
+                <div style="font-size:1.8rem;margin-bottom:8px;">🚨</div>
+                <div style="font-weight:700;font-size:1.1rem;color:#fca5a5;margin-bottom:6px;">FRAUDULENT</div>
+                <p style="font-size:0.82rem;color:#a8b5cc;line-height:1.5;">Designed to deceive — aims to extract <strong style="color:#e8edf5;">money, credentials, OTPs, or personal data</strong> from the target.</p>
+            </div>
+            <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.25);border-radius:14px;padding:1.2rem 1.4rem;">
+                <div style="font-size:1.8rem;margin-bottom:8px;">✅</div>
+                <div style="font-weight:700;font-size:1.1rem;color:#86efac;margin-bottom:6px;">SAFE</div>
+                <p style="font-size:0.82rem;color:#a8b5cc;line-height:1.5;">Legitimate content from a real source — even if it uses <strong style="color:#e8edf5;">urgency language or promotional offers</strong>.</p>
+            </div>
+        </div>
+        <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:1rem 1.2rem;display:flex;align-items:flex-start;gap:12px;" class="reveal">
+            <span style="font-size:1.4rem;flex-shrink:0;">⚠️</span>
+            <div>
+                <div style="font-weight:700;font-size:0.88rem;color:#fcd34d;margin-bottom:4px;">The Golden Rule</div>
+                <p style="font-size:0.82rem;color:#a8b5cc;line-height:1.5;margin:0;">A <strong style="color:#fcd34d;">real</strong> GCash promo with a countdown timer → <span class="pill-safe">Safe</span>. A <strong style="color:#fca5a5;">fake</strong> GCash promo that steals your MPIN → <span class="pill-fraud">Fraud</span>. The difference is <strong style="color:#e8edf5;">intent and authenticity</strong>, not tone alone.</p>
+            </div>
+        </div>
+        <div style="margin-top:12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;" class="reveal">
+            <span style="font-size:1rem;flex-shrink:0;">💬</span>
+            <p style="font-size:0.8rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#60a5fa;">When in doubt, ask:</strong> Would a legitimate Philippine institution (BSP-regulated bank, DTI-registered company, SEC-registered entity) plausibly send or post this content through this channel?</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 4: FRAUD CATEGORIES -->
+<div class="slide slide-4" data-slide="4">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:380px;height:380px;top:-80px;right:-80px;background:#7c3aed;opacity:0.09;"></div>
+        <div class="blob" style="width:240px;height:240px;bottom:-60px;left:-40px;background:#3b82f6;opacity:0.07;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">A2 · Fraud Category</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,3vw,2.1rem);margin-bottom:0.3rem;" class="reveal">Types of Fraud to Identify</h2>
+        <div class="divider-line reveal"></div>
+        <p style="font-size:0.82rem;color:#a8b5cc;margin-bottom:1rem;" class="reveal">Only assign a fraud category if <strong style="color:#fca5a5;">Binary Label = Fraudulent</strong>. If Safe → select <strong style="color:#86efac;">Legitimate</strong>.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="reveal">
+            <div class="glass-card">
+                <div style="font-size:1.5rem;margin-bottom:8px;">📨</div>
+                <div style="font-size:0.78rem;font-weight:700;color:#60a5fa;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;">Phishing / Smishing</div>
+                <p style="font-size:0.78rem;color:#a8b5cc;line-height:1.5;margin:0 0 8px;">Stealing credentials, OTPs, or personal info via SMS, email, Messenger, Telegram.</p>
+                <div style="font-size:0.72rem;color:#7dd3fc;border-top:1px solid rgba(255,255,255,0.06);padding-top:7px;">
+                    ↳ OTP / password request<br>↳ Fake login page links<br>↳ "Verify now or lose access"
+                </div>
+            </div>
+            <div class="glass-card">
+                <div style="font-size:1.5rem;margin-bottom:8px;">🎭</div>
+                <div style="font-size:0.78rem;font-weight:700;color:#a78bfa;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;">Impersonation</div>
+                <p style="font-size:0.78rem;color:#a8b5cc;line-height:1.5;margin:0 0 8px;">False identity — fake brand, fake person, fake official, cloned Facebook pages.</p>
+                <div style="font-size:0.72rem;color:#c4b5fd;border-top:1px solid rgba(255,255,255,0.06);padding-top:7px;">
+                    ↳ Fake celebrity endorsements<br>↳ Cloned government pages<br>↳ Deepfake / AI-generated content
+                </div>
+            </div>
+            <div class="glass-card">
+                <div style="font-size:1.5rem;margin-bottom:8px;">💰</div>
+                <div style="font-size:0.78rem;font-weight:700;color:#fcd34d;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;">Loan / Investment</div>
+                <p style="font-size:0.78rem;color:#a8b5cc;line-height:1.5;margin:0 0 8px;">Fraudulent financial products — fake loans, Ponzi, pyramid, fake SEC certificates.</p>
+                <div style="font-size:0.72rem;color:#fde68a;border-top:1px solid rgba(255,255,255,0.06);padding-top:7px;">
+                    ↳ "Double your money in 7 days"<br>↳ Fake DTI / SEC approval<br>↳ Upfront fees before loan release
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:12px;background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;" class="reveal">
+            <span style="font-size:1.1rem;">✅</span>
+            <p style="font-size:0.8rem;color:#a8b5cc;margin:0;"><strong style="color:#86efac;">Legitimate</strong> — Select this when Binary Label is Safe. It means the content is from a real, trustworthy source.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 5: DIFFICULTY TIER -->
+<div class="slide slide-5" data-slide="5">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:360px;height:360px;top:-80px;right:-80px;background:#22c55e;opacity:0.07;"></div>
+        <div class="blob" style="width:260px;height:260px;bottom:-60px;left:-40px;background:#ef4444;opacity:0.07;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">A3 · Difficulty Tier</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,3vw,2.1rem);margin-bottom:0.3rem;" class="reveal">How Hard Is This Case to Spot?</h2>
+        <div class="divider-line reveal"></div>
+        <p style="font-size:0.82rem;color:#a8b5cc;margin-bottom:1rem;" class="reveal">Rate based on <strong style="color:#e8edf5;">this single screenshot only</strong> — not the full post context.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="reveal">
+            <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.25);border-radius:14px;padding:1.2rem;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span class="pill-easy">Easy</span>
+                    <span style="font-size:0.75rem;color:#a8b5cc;">~1 min</span>
+                </div>
+                <p style="font-size:0.8rem;color:#a8b5cc;line-height:1.5;margin:0 0 10px;"><strong style="color:#86efac;">3+ independent, self-evident signals.</strong> A non-expert spots it in 15–30 seconds.</p>
+                <div style="font-size:0.75rem;color:#86efac;line-height:1.7;">
+                    ✓ Low-res / wrong logo<br>
+                    ✓ Explicit OTP / PIN request<br>
+                    ✓ Gmail sender on bank notification<br>
+                    ✓ Prize claim + urgency + link
+                </div>
+            </div>
+            <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:1.2rem;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span class="pill-medium">Medium</span>
+                    <span style="font-size:0.75rem;color:#a8b5cc;">~2 min</span>
+                </div>
+                <p style="font-size:0.8rem;color:#a8b5cc;line-height:1.5;margin:0 0 10px;"><strong style="color:#fcd34d;">1–2 signals needing inference</strong> or Taglish knowledge to decode.</p>
+                <div style="font-size:0.75rem;color:#fcd34d;line-height:1.7;">
+                    ✓ Urgency without brand impersonation<br>
+                    ✓ Subtle Taglish scam phrases<br>
+                    ✓ Promotional tone — could go either way
+                </div>
+            </div>
+            <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25);border-radius:14px;padding:1.2rem;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span class="pill-hard">Hard</span>
+                    <span style="font-size:0.75rem;color:#a8b5cc;">3–5 min</span>
+                </div>
+                <p style="font-size:0.8rem;color:#a8b5cc;line-height:1.5;margin:0 0 10px;"><strong style="color:#fca5a5;">Minimal or sophisticated signals</strong> that could fool even careful observers.</p>
+                <div style="font-size:0.75rem;color:#fca5a5;line-height:1.7;">
+                    ✓ Pixel-accurate brand clone<br>
+                    ✓ Edited transaction record<br>
+                    ✓ Looks entirely legitimate in isolation
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;" class="reveal">
+            <span style="font-size:1rem;flex-shrink:0;">📸</span>
+            <p style="font-size:0.78rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#60a5fa;">Multi-image post rule:</strong> If the image looks fine in isolation but is suspicious only because of other images in the post → assign <span class="pill-medium">Medium</span> or <span class="pill-hard">Hard</span> (never Easy). Note this in your Rationale.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 6: SIGNAL INVENTORY -->
+<div class="slide slide-6" data-slide="6">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:360px;height:360px;top:-80px;right:-80px;background:#3b82f6;opacity:0.08;"></div>
+        <div class="blob" style="width:240px;height:240px;bottom:-60px;left:-40px;background:#7c3aed;opacity:0.07;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">Section B · Signal Inventory</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,3vw,2.1rem);margin-bottom:0.3rem;" class="reveal">Common Fraud Signals — Quick Reference</h2>
+        <div class="divider-line reveal"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="reveal">
+            <div>
+                <div style="font-size:0.72rem;font-weight:700;color:#fcd34d;letter-spacing:0.08em;text-transform:uppercase;background:rgba(245,158,11,0.08);border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:8px;">👁️ Visual</div>
+                <div class="signal-row" style="border-left-color:#f59e0b;"><span style="font-size:0.78rem;color:#a8b5cc;">Stretched / low-res brand logo</span></div>
+                <div class="signal-row" style="border-left-color:#f59e0b;"><span style="font-size:0.78rem;color:#a8b5cc;">Red/orange urgency design + countdown</span></div>
+                <div class="signal-row" style="border-left-color:#f59e0b;"><span style="font-size:0.78rem;color:#a8b5cc;">Layout cloning (GCash, BDO, Maya)</span></div>
+                <div class="signal-row" style="border-left-color:#f59e0b;"><span style="font-size:0.78rem;color:#a8b5cc;">QR code in unexpected context</span></div>
+                <div class="signal-row" style="border-left-color:#f59e0b;"><span style="font-size:0.78rem;color:#a8b5cc;">Mismatched fonts / edited timestamp</span></div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.08em;text-transform:uppercase;background:rgba(59,130,246,0.08);border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:8px;">💬 Textual</div>
+                <div class="signal-row"><span style="font-size:0.78rem;color:#a8b5cc;">"Mag-claim na" / urgency phrases</span></div>
+                <div class="signal-row"><span style="font-size:0.78rem;color:#a8b5cc;">"Nanalo ka!" / peso prize claims</span></div>
+                <div class="signal-row"><span style="font-size:0.78rem;color:#a8b5cc;">Authority name drops (GCash, SSS, BSP)</span></div>
+                <div class="signal-row"><span style="font-size:0.78rem;color:#a8b5cc;">OTP, PIN, password request</span></div>
+                <div class="signal-row"><span style="font-size:0.78rem;color:#a8b5cc;">Gmail/Yahoo sender for "bank" notif</span></div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem;font-weight:700;color:#c4b5fd;letter-spacing:0.08em;text-transform:uppercase;background:rgba(124,58,237,0.08);border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:8px;">🏗️ Structural</div>
+                <div class="signal-row" style="border-left-color:#7c3aed;"><span style="font-size:0.78rem;color:#a8b5cc;">Bank branding in SMS / Messenger</span></div>
+                <div class="signal-row" style="border-left-color:#7c3aed;"><span style="font-size:0.78rem;color:#a8b5cc;">No footer / no privacy policy</span></div>
+                <div class="signal-row" style="border-left-color:#7c3aed;"><span style="font-size:0.78rem;color:#a8b5cc;">bit.ly / tinyurl / non-brand domain</span></div>
+                <div class="signal-row" style="border-left-color:#7c3aed;"><span style="font-size:0.78rem;color:#a8b5cc;">Fake SEC / DTI certificate</span></div>
+                <div class="signal-row" style="border-left-color:#7c3aed;"><span style="font-size:0.78rem;color:#a8b5cc;">Fake crypto / investment dashboard</span></div>
+            </div>
+        </div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" class="reveal">
+            <div style="background:rgba(59,130,246,0.06);border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#7dd3fc;">📲 <strong>GCash:</strong> Official notifs only via app or sender "GCash". Never asks MPIN via SMS.</div>
+            <div style="background:rgba(59,130,246,0.06);border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#7dd3fc;">🏦 <strong>Banks:</strong> BDO/BPI send via registered sender IDs or @bdo.com.ph — never via Messenger.</div>
+            <div style="background:rgba(59,130,246,0.06);border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#7dd3fc;">🏛️ <strong>Gov't:</strong> BSP / SSS / PhilHealth never send prizes or loan approvals via SMS or Facebook.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 7: RATIONALE & CONFIDENCE -->
+<div class="slide slide-7" data-slide="7">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:360px;height:360px;top:-80px;right:-80px;background:#10b981;opacity:0.08;"></div>
+        <div class="blob" style="width:260px;height:260px;bottom:-60px;left:-40px;background:#3b82f6;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">Section D + A4</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,3vw,2.1rem);margin-bottom:0.3rem;" class="reveal">Rationale & Confidence</h2>
+        <div class="divider-line reveal"></div>
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:16px;" class="reveal">
+            <div>
+                <div style="font-size:0.72rem;font-weight:700;color:#34d399;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">📝 How to Write a Good Rationale</div>
+                <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:1rem 1.1rem;margin-bottom:10px;">
+                    <div style="font-size:0.72rem;color:#6ee7b7;font-weight:600;margin-bottom:6px;">✅ GOOD EXAMPLE</div>
+                    <p style="font-size:0.78rem;color:#a8b5cc;line-height:1.55;margin:0;font-style:italic;">"The SMS uses GCash sender ID but contains a bit.ly link and urgency phrase 'Mag-redeem na ngayon' — three independent signals converging on smishing."</p>
+                </div>
+                <div style="font-size:0.72rem;font-weight:700;color:#f87171;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">❌ What to Avoid</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:7px;padding:7px 10px;font-size:0.76rem;color:#a8b5cc;">🚫 "Looks like a scam" — too vague</div>
+                    <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:7px;padding:7px 10px;font-size:0.76rem;color:#a8b5cc;">🚫 "This is fraud because it's fraudulent" — circular</div>
+                    <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:7px;padding:7px 10px;font-size:0.76rem;color:#a8b5cc;">🚫 "This is phishing" — just the category name</div>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">💡 Confidence Levels</div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px 12px;">
+                        <div style="font-weight:700;font-size:0.82rem;color:#86efac;margin-bottom:3px;">High</div>
+                        <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Evidence is clear. You are not second-guessing your label.</p>
+                    </div>
+                    <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 12px;">
+                        <div style="font-weight:700;font-size:0.82rem;color:#fcd34d;margin-bottom:3px;">Medium</div>
+                        <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Reasonably sure, but 1–2 signals are ambiguous.</p>
+                    </div>
+                    <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 12px;">
+                        <div style="font-weight:700;font-size:0.82rem;color:#fca5a5;margin-bottom:3px;">Low</div>
+                        <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Genuinely uncertain — borderline case. <strong style="color:#fca5a5;">Low confidence is valuable data!</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 8: STEP-BY-STEP PROCEDURE -->
+<div class="slide slide-8" data-slide="8">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:380px;height:380px;top:-80px;right:-80px;background:#3b82f6;opacity:0.08;"></div>
+        <div class="blob" style="width:240px;height:240px;bottom:-60px;left:-40px;background:#60a5fa;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">Annotation Procedure</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,3vw,2.1rem);margin-bottom:0.3rem;" class="reveal">Step-by-Step: Every Case, Every Time</h2>
+        <div class="divider-line reveal"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="reveal">
+            <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;">
+                <div class="step-num">1</div>
+                <div><div style="font-size:0.84rem;font-weight:600;margin-bottom:3px;">View Full Image</div><p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Zoom in. Read all text carefully. Check sender, URLs, logos, and the nature of the request.</p></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;">
+                <div class="step-num">2</div>
+                <div><div style="font-size:0.84rem;font-weight:600;margin-bottom:3px;">Assign Binary Label</div><p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Is this trying to deceive me into giving up credentials, money, or personal info? → <span class="pill-fraud">Fraud</span> or <span class="pill-safe">Safe</span></p></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;">
+                <div class="step-num">3</div>
+                <div><div style="font-size:0.84rem;font-weight:600;margin-bottom:3px;">Assign Fraud Category</div><p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Credential theft → Phishing/Smishing · False identity → Impersonation · Financial exploit → Loan/Investment · If Safe → Legitimate</p></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;">
+                <div class="step-num">4</div>
+                <div><div style="font-size:0.84rem;font-weight:600;margin-bottom:3px;">Count Fraud Signals</div><p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">3+ clear = <span class="pill-easy">Easy</span> · 1–2 with inference = <span class="pill-medium">Medium</span> · Sophisticated / minimal = <span class="pill-hard">Hard</span></p></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;">
+                <div class="step-num">5</div>
+                <div><div style="font-size:0.84rem;font-weight:600;margin-bottom:3px;">Write Rationale</div><p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Name the 1–2 most important specific signals. 2–4 sentences. Reference Section B. Be precise.</p></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;">
+                <div class="step-num">6</div>
+                <div><div style="font-size:0.84rem;font-weight:600;margin-bottom:3px;">Rate Confidence</div><p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Be honest. High = certain · Medium = mostly sure · Low = genuinely borderline. Low confidence cases are not failures — they are valuable.</p></div>
+            </div>
+        </div>
+        <div style="margin-top:10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:9px 14px;display:flex;align-items:center;gap:10px;" class="reveal">
+            <span style="font-size:1rem;">✅</span>
+            <p style="font-size:0.78rem;color:#a8b5cc;margin:0;"><strong style="color:#60a5fa;">Step 7 — Submit.</strong> Click Submit in Label Studio. Do not change labels after submission unless you accidentally clicked the wrong button.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 9: EDGE CASES -->
+<div class="slide slide-9" data-slide="9">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:360px;height:360px;top:-80px;right:-80px;background:#f59e0b;opacity:0.07;"></div>
+        <div class="blob" style="width:240px;height:240px;bottom:-60px;left:-40px;background:#ef4444;opacity:0.06;"></div>
+    </div>
+    <div class="content">
+        <div class="section-badge reveal">Edge Cases</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,3vw,2.1rem);margin-bottom:0.3rem;" class="reveal">Tricky Scenarios & How to Handle Them</h2>
+        <div class="divider-line reveal"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="reveal">
+            <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;border-left:2px solid rgba(245,158,11,0.4);">
+                <div style="font-size:0.78rem;font-weight:700;color:#fcd34d;margin-bottom:4px;">🛒 Aggressive-but-Legitimate Marketing</div>
+                <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Real Shopee/GCash promo with countdown timer, but authentic branding and no credential input → <span class="pill-safe">Safe</span>. Urgency alone ≠ Fraud.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;border-left:2px solid rgba(59,130,246,0.4);">
+                <div style="font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:4px;">📸 Screenshot of a Screenshot</div>
+                <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Label the <strong style="color:#e8edf5;">inner screenshot content</strong> (the scam message), not the outer framing. Someone reporting a scam does not make it Safe.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;border-left:2px solid rgba(124,58,237,0.4);">
+                <div style="font-size:0.78rem;font-weight:700;color:#c4b5fd;margin-bottom:4px;">✂️ Partial / Cropped Screenshot</div>
+                <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Annotate visible content only. If too much context is missing → best judgment + <span class="pill-hard">Hard</span> + Low confidence + note in Rationale.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;border-left:2px solid rgba(34,197,94,0.4);">
+                <div style="font-size:0.78rem;font-weight:700;color:#86efac;margin-bottom:4px;">📰 Government Warning / News Article</div>
+                <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">A legit BSP advisory about scams → <span class="pill-safe">Safe</span>. A scam shown inside a news article for educational purposes → <span class="pill-safe">Safe</span>. Label the purpose, not the inner content.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;border-left:2px solid rgba(239,68,68,0.4);">
+                <div style="font-size:0.78rem;font-weight:700;color:#fca5a5;margin-bottom:4px;">🤖 Deepfake / Celebrity Endorsement</div>
+                <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Even if you can't confirm it's AI-generated, an implausible celebrity/official endorsement of a product → <span class="pill-fraud">Fraud</span> + Impersonation + <span class="pill-hard">Hard</span>.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;border-left:2px solid rgba(245,158,11,0.4);">
+                <div style="font-size:0.78rem;font-weight:700;color:#fcd34d;margin-bottom:4px;">⬛ Blank / Corrupted Image</div>
+                <p style="font-size:0.76rem;color:#a8b5cc;margin:0;line-height:1.45;">Do <strong style="color:#e8edf5;">not</strong> assign a label. Write <code style="background:rgba(255,255,255,0.08);padding:1px 6px;border-radius:4px;font-size:0.72rem;">SKIP - [reason]</code> in the Rationale field + Low confidence. Lead researcher will review.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 10: REMINDERS + CLOSE -->
+<div class="slide slide-10" data-slide="10">
+    <div class="gradient-mesh">
+        <div class="blob" style="width:480px;height:480px;top:-110px;right:-110px;background:#3b82f6;opacity:0.13;"></div>
+        <div class="blob" style="width:300px;height:300px;bottom:-80px;left:-60px;background:#1d4ed8;opacity:0.1;"></div>
+        <div class="blob" style="width:200px;height:200px;top:35%;left:10%;background:#60a5fa;opacity:0.08;"></div>
+    </div>
+    <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+    <div class="content" style="text-align:center;">
+        <div style="font-size:3rem;margin-bottom:0.8rem;animation:float 3.2s ease-in-out infinite;" class="reveal">🔑</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.6rem,3.5vw,2.5rem);font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#60a5fa,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" class="reveal">Before You Begin</h2>
+        <div class="divider-line reveal" style="margin:0 auto 1.2rem;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:780px;margin:0 auto 1.2rem;text-align:left;" class="reveal">
+            <div class="glass-card" style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:1.2rem;flex-shrink:0;">📖</span>
+                <p style="font-size:0.8rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#e8edf5;">Read the full manual</strong> before your first annotation. Sections 1–6 cover all definitions and procedures.</p>
+            </div>
+            <div class="glass-card" style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:1.2rem;flex-shrink:0;">🎯</span>
+                <p style="font-size:0.8rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#e8edf5;">Complete the 20-case calibration batch</strong> first. Wait for the lead researcher's debrief before starting the full batch.</p>
+            </div>
+            <div class="glass-card" style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:1.2rem;flex-shrink:0;">🔒</span>
+                <p style="font-size:0.8rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#e8edf5;">All materials are confidential.</strong> Do not share screenshots or upload them to any AI tool (ChatGPT, etc.).</p>
+            </div>
+            <div class="glass-card" style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:1.2rem;flex-shrink:0;">🚫</span>
+                <p style="font-size:0.8rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#e8edf5;">Don't discuss individual case labels</strong> with other annotators until post-annotation analysis is complete.</p>
+            </div>
+            <div class="glass-card" style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:1.2rem;flex-shrink:0;">🧠</span>
+                <p style="font-size:0.8rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#e8edf5;">Take breaks.</strong> Do not annotate more than 100 cases per session. Fatigue degrades label quality.</p>
+            </div>
+            <div class="glass-card" style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:1.2rem;flex-shrink:0;">💬</span>
+                <p style="font-size:0.8rem;color:#a8b5cc;margin:0;line-height:1.5;"><strong style="color:#e8edf5;">Message the lead researcher</strong> whenever you're unsure about a case. No question is too small.</p>
+            </div>
+        </div>
+        <p style="font-size:0.78rem;color:#5a6a85;" class="reveal">PhilFraud-SS Annotation Manual v1.0 · For internal thesis use only</p>
+    </div>
+</div>
+
+</div>
+<div class="nav-controls">
+    <button class="nav-btn" onclick="changeSlide(-1)">&#8249;</button>
+    <div class="slide-dots" id="dots"></div>
+    <button class="nav-btn" onclick="changeSlide(1)">&#8250;</button>
+    <span class="slide-counter" id="counter">1 / 10</span>
+</div>
+<script>
+let current = 1;
+const total = document.querySelectorAll('.slide').length;
+const dotsContainer = document.getElementById('dots');
+const counter = document.getElementById('counter');
+for (let i = 1; i <= total; i++) { const dot = document.createElement('div'); dot.className = 'dot' + (i===1?' active':''); dot.onclick = () => goToSlide(i); dotsContainer.appendChild(dot); }
+function goToSlide(n) {
+    const prev = document.querySelector('.slide.active');
+    const next = document.querySelector(`.slide[data-slide="${n}"]`);
+    if (prev) prev.classList.remove('active');
+    if (next) { next.classList.add('active'); animateSlide(next); }
+    current = n; updateNav();
+}
+function changeSlide(dir) { let n = current+dir; if(n<1)n=total; if(n>total)n=1; goToSlide(n); }
+function updateNav() { document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i+1===current)); counter.textContent=current+' / '+total; }
+document.addEventListener('keydown',(e)=>{ if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();changeSlide(1);} if(e.key==='ArrowLeft'){e.preventDefault();changeSlide(-1);} });
+let tx=0; document.addEventListener('touchstart',(e)=>{tx=e.touches[0].clientX;}); document.addEventListener('touchend',(e)=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50)changeSlide(d>0?1:-1);});
+function animateSlide(slide) {
+    slide.querySelectorAll('.reveal').forEach((el,i)=>{ el.style.transition='none'; el.style.opacity='0'; el.style.transform='translateY(18px)'; el.offsetHeight; const delay=i*0.07; el.style.transition=`opacity 0.32s ease ${delay}s, transform 0.32s ease ${delay}s`; el.style.opacity='1'; el.style.transform='translateY(0)'; });
+}
+document.addEventListener('mousemove',(e)=>{ const s=document.querySelector('.mouse-spotlight'); if(s){const rgb='59,130,246'; s.style.background=`radial-gradient(580px circle at ${e.clientX}px ${e.clientY}px, rgba(${rgb},0.055), transparent 40%)`;} });
+window.initParticles=function(canvas,opts){ if(!canvas)return; const ctx=canvas.getContext('2d'); canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight; const count=opts.count||55; const rgb='59,130,246'; const [r,g,b]=rgb.split(',').map(Number); let mx=-1000,my=-1000; const ps=Array.from({length:count},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,size:Math.random()*2+.8,alpha:Math.random()*.3+.1})); canvas.addEventListener('mousemove',(e)=>{const rc=canvas.getBoundingClientRect();mx=e.clientX-rc.left;my=e.clientY-rc.top;}); canvas.addEventListener('mouseleave',()=>{mx=-1000;my=-1000;}); (function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);ps.forEach(p=>{const dx=p.x-mx,dy=p.y-my,dist=Math.sqrt(dx*dx+dy*dy);if(dist<120){const f=(120-dist)/120*2;p.vx+=(dx/dist)*f*.1;p.vy+=(dy/dist)*f*.1;} p.vx*=.98;p.vy*=.98;p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=`rgba(${r},${g},${b},${p.alpha})`;ctx.fill();});requestAnimationFrame(animate);})(); };
+document.querySelectorAll('.particle-canvas').forEach(c=>window.initParticles(c,{count:50}));
+try { animateSlide(document.querySelector('.slide.active')); } catch(e){}
+</script>
+</body>
+</html>
