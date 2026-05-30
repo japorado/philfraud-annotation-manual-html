@@ -11,7 +11,7 @@
 
 | Resource | Description |
 |----------|-------------|
-| 🎞️ [View Slides]([https://[your-username].github.io/philfraud-annotation-manual/](https://japorado.github.io/philfraud-annotation-manual-html/)) | Interactive visual summary — start here |
+| 🎞️ [View Slides](https://japorado.github.io/philfraud-annotation-manual-html/) | Interactive visual summary — start here |
 | 📄 [Download Full Manual (PDF)](./Appendix-A.pdf) | Complete definitions, signal guide, edge cases |
 
 ---
