@@ -20,7 +20,7 @@
 
 1. **Go through the slides** — takes ~5 minutes, gives you the big picture
 2. **Read the full PDF** — go through Sections 1–6 carefully before your first session
-3. **Keep open during annotation** — PDF Sections 5–6 (Signal Reference) and Section 8 (Edge Cases)
+3. **Keep open during annotation** — PDF Sections 5–6 (Signal Reference) and Section 7 (Edge Cases)
 4. **Log in to Label Studio** — credentials sent to you separately via private message
 5. **Complete the 20-case calibration batch** — do not start the full dataset until after the debrief
 
